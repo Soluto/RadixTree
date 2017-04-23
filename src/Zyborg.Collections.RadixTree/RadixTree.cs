@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Zyborg.Collections
 {
@@ -326,58 +327,33 @@ namespace Zyborg.Collections
         /// </summary>
         public (string key, TValue value, bool found) LongestPrefix(string prefix)
         {
-            //~ var last *leafNode
-            //~ n := t.root
-            //~ search := s
             LeafNode<TValue> last = null;
-            var n = _root;
+            var node = _root;
             var search = prefix;
 
             //for {
             while (true)
             {
                 // Look for a leaf node
-                //~ if n.isLeaf() {
-                //~ 	last = n.leaf
-                //~ }
-                if (n.IsLeaf)
-                    last = n.Leaf;
+                if (node.IsLeaf)
+                    last = node.Leaf;
 
                 // Check for key exhaution
-                //~ if len(search) == 0 {
-                //~ 	break
-                //~ }
                 if (search.Length == 0)
                     break;
 
                 // Look for an edge
-                //~ n = n.getEdge(search[0])
-                //~ if n == nil {
-                //~ 	break
-                //~ }
-                if (!n.TryGetEdge(search[0], out n))
+                if (!node.TryGetEdge(search[0], out node))
                     break;
 
                 // Consume the search prefix
-                //~ if strings.HasPrefix(search, n.prefix) {
-                //~ 	search = search[len(n.prefix):]
-                //~ } else {
-                //~ 	break
-                //~ }
-                if (search.StartsWith(n.Prefix))
-                    search = search.Substring(n.Prefix.Length);
+                if (search.StartsWith(node.Prefix))
+                    search = search.Substring(node.Prefix.Length);
                 else
                     break;
             }
 
-            //~ if last != nil {
-            //~ 	return last.key, last.val, true
-            //~ }
-            //~ return "", nil, false
-
-            if (last != null)
-                return (last.Key, last.Value, true);
-            return (string.Empty, default(TValue), false);
+            return last != null ? (last.Key, last.Value, true) : (string.Empty, default(TValue), false);
         }
 
         /// <summary>
@@ -385,128 +361,84 @@ namespace Zyborg.Collections
         /// </summary>
         public (string key, TValue value, bool found) Minimum()
         {
-            //!n := t.root
-            var n = _root;
+            var node = _root;
 
-            //for {
-            //	if n.isLeaf() {
-            //		return n.leaf.key, n.leaf.val, true
-            //	}
-            //	if len(n.edges) > 0 {
-            //		n = n.edges[0].node
-            //	} else {
-            //		break
-            //	}
-            //}
             while (true)
             {
-                if (n.IsLeaf)
-                    return (n.Leaf.Key, n.Leaf.Value, true);
+                if (node.IsLeaf)
+                    return (node.Leaf.Key, node.Leaf.Value, true);
 
-                if (n.Edges.Count > 0)
-                    n = n.Edges.Values[0];
+                if (node.Edges.Count > 0)
+                    node = node.Edges.Values[0];
                 else
                     break;
             }
 
-            //return "", nil, false
             return (string.Empty, default(TValue), false);
         }
 
         /// <summary>
         /// returns the maximum value in the tree
         /// </summary>
-        /// <returns></returns>
         public (string key, TValue value, bool found) Maximum()
         {
-            //~ n := t.root
-            var n = _root;
+            var node = _root;
 
-            //for {
-            //	if num := len(n.edges); num > 0 {
-            //		n = n.edges[num-1].node
-            //		continue
-            //	}
-            //	if n.isLeaf() {
-            //		return n.leaf.key, n.leaf.val, true
-            //	}
-            //	break
-            //}
             while (true)
             {
-                var num = n.Edges.Count;
+                var num = node.Edges.Count;
                 if (num > 0)
                 {
-                    n = n.Edges.Values[num - 1];
+                    node = node.Edges.Values[num - 1];
                     continue;
                 }
-                if (n.IsLeaf)
-                    return (n.Leaf.Key, n.Leaf.Value, true);
+                if (node.IsLeaf)
+                    return (node.Leaf.Key, node.Leaf.Value, true);
 
                 break;
             }
 
-            //return "", nil, false
             return (string.Empty, default(TValue), false);
         }
 
-        // Walk is used to walk the tree
-        //~ func (t *Tree) Walk(fn WalkFn) {
-        public void Walk(Walker<TValue> fn)
+        /// <summary>
+        /// used to walk the tree
+        /// </summary>
+        public void Walk(Walker<TValue> walker)
         {
-            RecursiveWalk(_root, fn);
+            RecursiveWalk(_root, walker);
         }
 
 
-        // WalkPrefix is used to walk the tree under a prefix
-        //~ func (t *Tree) WalkPrefix(prefix string, fn WalkFn) {
-        public void WalkPrefix(string prefix, Walker<TValue> fn)
+        /// <summary>
+        /// used to walk the tree under a prefix
+        /// </summary>
+        public void WalkPrefix(string prefix, Walker<TValue> walker)
         {
-            //~ n := t.root
-            //~ search := prefix
-            var n = _root;
+            var node = _root;
             var search = prefix;
 
-            //~ for {
             while (true)
             {
                 // Check for key exhaution
-                //~ if len(search) == 0 {
-                //~ 	recursiveWalk(n, fn)
-                //~ 	return
-                //~ }
                 if (search.Length == 0)
                 {
-                    RecursiveWalk(n, fn);
+                    RecursiveWalk(node, walker);
                     return;
                 }
 
                 // Look for an edge
-                //~ n = n.getEdge(search[0])
-                //~ if n == nil {
-                //~ 	break
-                //~ }
-                if (!n.TryGetEdge(search[0], out n))
+                if (!node.TryGetEdge(search[0], out node))
                     break;
 
                 // Consume the search prefix
-                //~ if strings.HasPrefix(search, n.prefix) {
-                //~ 	search = search[len(n.prefix):]
-                //~ 
-                //~ } else if strings.HasPrefix(n.prefix, search) {
-                //~ 	// Child may be under our search prefix
-                //~ 	recursiveWalk(n, fn)
-                //~ 	return
-                //~ } else {
-                //~ 	break
-                //~ }
-                if (search.StartsWith(n.Prefix))
+                if (search.StartsWith(node.Prefix))
                 {
-                    search = search.Substring(n.Prefix.Length);
+                    search = search.Substring(node.Prefix.Length);
                 }
-                else if (n.Prefix.StartsWith(search))
+                else if (node.Prefix.StartsWith(search))
                 {
-                    RecursiveWalk(n, fn);
+                    RecursiveWalk(node, walker);
                     return;
                 }
                 else
@@ -516,102 +448,66 @@ namespace Zyborg.Collections
             }
         }
 
-        // WalkPath is used to walk the tree, but only visiting nodes
-        // from the root down to a given leaf. Where WalkPrefix walks
-        // all the entries *under* the given prefix, this walks the
-        // entries *above* the given prefix.
-        //~ func (t *Tree) WalkPath(path string, fn WalkFn) {
-        public void WalkPath(string path, Walker<TValue> fn)
+        /// <summary>
+        /// WalkPath is used to walk the tree, but only visiting nodes
+        /// from the root down to a given leaf. Where WalkPrefix walks
+        /// all the entries *under* the given prefix, this walks the
+        /// entries *above* the given prefix.
+        /// </summary>
+        public void WalkPath(string path, Walker<TValue> walker)
         {
-            //~ n := t.root
-            //~ search := path
-            var n = _root;
+            var node = _root;
             var search = path;
 
-            //~ for {
             while (true)
             {
                 // Visit the leaf values if any
-                //~ if n.leaf != nil && fn(n.leaf.key, n.leaf.val) {
-                //~ 	return
-                //~ }
-                if (n.Leaf != null && fn(n.Leaf.Key, n.Leaf.Value))
+                if (node.Leaf != null && walker(node.Leaf.Key, node.Leaf.Value))
                     return;
 
                 // Check for key exhaution
-                //~ if len(search) == 0 {
-                //~ 	return
-                //~ }
                 if (search.Length == 0)
                     return;
 
                 // Look for an edge
-                //~ n = n.getEdge(search[0])
-                //~ if n == nil {
-                //~ 	return
-                //~ }
-                if (!n.TryGetEdge(search[0], out n))
+                if (!node.TryGetEdge(search[0], out node))
                     return;
 
                 // Consume the search prefix
-                //~ if strings.HasPrefix(search, n.prefix) {
-                //~ 	search = search[len(n.prefix):]
-                //~ } else {
-                //~ 	break
-                //~ }
-                if (search.StartsWith(n.Prefix))
-                    search = search.Substring(n.Prefix.Length);
+                if (search.StartsWith(node.Prefix))
+                    search = search.Substring(node.Prefix.Length);
                 else
                     break;
             }
         }
 
-        // recursiveWalk is used to do a pre-order walk of a node
-        // recursively. Returns true if the walk should be aborted
-        //~ func recursiveWalk(n *node, fn WalkFn) bool {
-        private static bool RecursiveWalk(Node<TValue> n, Walker<TValue> fn)
+        /// <summary>
+        /// used to do a pre-order walk of a node recursively
+        /// </summary>
+        /// <returns>true if the walk should be aborted</returns>
+        private static bool RecursiveWalk(Node<TValue> node, Walker<TValue> walker)
         {
             // Visit the leaf values if any
-            //~ if n.leaf != nil && fn(n.leaf.key, n.leaf.val) {
-            //~ 	return true
-            //~ }
-            if (n.Leaf != null && fn(n.Leaf.Key, n.Leaf.Value))
+            if (node.Leaf != null && walker(node.Leaf.Key, node.Leaf.Value))
                 return true;
 
             // Recurse on the children
-            //~ for _, e := range n.edges {
-            //~ 	if recursiveWalk(e.node, fn) {
-            //~ 		return true
-            //~ 	}
-            //~ }
-            foreach (var e in n.Edges.Values)
-            {
-                if (RecursiveWalk(e, fn))
-                    return true;
-            }
-
-            //~return false
-            return false;
+            return node.Edges.Values.Any(e => RecursiveWalk(e, walker));
         }
 
-        // ToMap is used to walk the tree and convert it into a map
-        //! func (t *Tree) ToMap() map[string]interface{} {
-        public IDictionary<string, TValue> ToMap()
+        /// <summary>
+        /// used to walk the tree and convert it into a map
+        /// </summary>
+        public IDictionary<string, TValue> ToDictionary()
         {
-            //! out := make(map[string]interface{}, t.size)
             var @out = new Dictionary<string, TValue>(_size);
 
-            //~ t.Walk(func(k string, v interface{}) bool {
-            //~ 	out[k] = v
-            //~ 	return false
-            //~ })
             Walk((k, v) =>
             {
                 @out[k] = v;
                 return false;
             });
 
-            //~ return out
             return @out;
         }
 
