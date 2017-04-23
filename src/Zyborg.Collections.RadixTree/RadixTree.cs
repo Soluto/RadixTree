@@ -288,52 +288,37 @@ namespace Zyborg.Collections
         /// lookup a specific key
         /// </summary>
         /// <returns>the value and if it was found</returns>
-        public (TValue value, bool found) GoGet(string key)
+        public bool TryGetValue(string key, out TValue value)
         {
-            //	n := t.root
-            //	search := s
-            var n = _root;
+            var node = _root;
             var search = key;
 
-            //~ for {
             while (true)
             {
                 // Check for key exhaution
-                //~ if len(search) == 0 {
-                //~ 	if n.isLeaf() {
-                //~ 		return n.leaf.val, true
-                //~ 	}
-                //~ 	break
-                //~ }
                 if (search.Length == 0)
                 {
-                    if (n.IsLeaf)
-                        return (n.Leaf.Value, true);
+                    if (node.IsLeaf)
+                    {
+                        value = node.Leaf.Value;
+                        return true;
+                    }
                     break;
                 }
 
                 // Look for an edge
-                //~ n = n.getEdge(search[0])
-                //~ if n == nil {
-                //~ 	break
-                //~ }
-                if (!n.TryGetEdge(search[0], out n))
+                if (!node.TryGetEdge(search[0], out node))
                     break;
 
                 // Consume the search prefix
-                //~ if strings.HasPrefix(search, n.prefix) {
-                //~ 	search = search[len(n.prefix):]
-                //~ } else {
-                //~ 	break
-                //~ }
-                if (search.StartsWith(n.Prefix))
-                    search = search.Substring(n.Prefix.Length);
+                if (search.StartsWith(node.Prefix))
+                    search = search.Substring(node.Prefix.Length);
                 else
                     break;
             }
 
-            //~	return nil, false
-            return (default(TValue), false);
+            value = default(TValue);
+            return false;
         }
 
         /// <summary>

@@ -56,8 +56,8 @@ namespace Zyborg.Collections
 			//~ if !ok || val != true {
 			//~ 	t.Fatalf("bad: %v", val)
 			//~ }
-			int val;
-			(val, ok) = r.GoGet("");
+            
+			ok = r.TryGetValue("", out int val);
 			Assert.IsTrue(ok, "Get should not find key");
 			Assert.AreEqual(default(int), val, "Get should return default int");
 
@@ -516,7 +516,7 @@ namespace Zyborg.Collections
 			//~ }
 			foreach (var kv in inp)
 			{
-				var (@out, ok) = r.GoGet(kv.Key);
+				var ok = r.TryGetValue(kv.Key, out var @out);
 				Assert.IsTrue(ok, "Contains key for Get");
 				Assert.AreEqual(kv.Value, @out, "Found expected value by key");
 			}
@@ -642,7 +642,7 @@ namespace Zyborg.Collections
 			//~ }
 			foreach (var kv in inp)
 			{
-				var (@out, ok) = r.GoGet(kv.Key);
+			    var ok = r.TryGetValue(kv.Key, out var @out);
 				Assert.IsTrue(ok, "Contains key for Get");
 				Assert.AreEqual(kv.Value, @out, "Found expected value by key");
 			}
