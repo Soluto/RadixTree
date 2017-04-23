@@ -18,16 +18,6 @@ namespace Zyborg.Collections
         internal TValue _value;
     }
 
-    /// <summary>
-    /// used to represent an edge node
-    /// </summary>
-    /// <typeparam name="TValue"></typeparam>
-    internal class Edge<TValue>
-    {
-        internal char _label;
-        internal Node<TValue> _node;
-    }
-
     internal class Node<TValue>
     {
         /// <summary>
@@ -43,7 +33,7 @@ namespace Zyborg.Collections
         /// We avoid a fully materialized slice to save memory,
         /// since in most cases we expect to be sparse
         /// </summary>
-        internal SortedList<char, Edge<TValue>> _edges = new SortedList<char, Edge<TValue>>();
+        internal SortedList<char, Node<TValue>> _edges = new SortedList<char, Node<TValue>>();
 
         //~ func (n *node) isLeaf() bool {
         //~ 	return n.leaf != nil
@@ -54,9 +44,9 @@ namespace Zyborg.Collections
         //~ 	n.edges = append(n.edges, e)
         //~ 	n.edges.Sort()
         //~ }
-        public void AddEdge(Edge<TValue> e)
+        public void AddEdge(char label, Node<TValue> node)
         {
-            _edges.Add(e._label, e);
+            _edges.Add(label, node);
         }
 
         //~ func (n *node) replaceEdge(e edge) {
@@ -70,11 +60,10 @@ namespace Zyborg.Collections
         //~ 	}
         //~ 	panic("replacing missing edge")
         //~ }
-        public void ReplaceEdge(Edge<TValue> e)
+        public void ReplaceEdge(char label, Node<TValue> node)
         {
-            if (!_edges.TryGetValue(e._label, out var edge)) throw new Exception("replacing missing edge");
-
-            edge._node = e._node;
+            if (!_edges.ContainsKey(label)) throw new Exception("replacing missing edge");
+            _edges[label] = node;
         }
 
         //~ func (n *node) getEdge(label byte) *node {
@@ -89,7 +78,7 @@ namespace Zyborg.Collections
         //~ }
         public Node<TValue> GetEdge(char label)
         {
-          return _edges.TryGetValue(label, out var edge) ? edge._node : null;
+          return _edges.TryGetValue(label, out var edge) ? edge : null;
         } 
 
         //~ func (n *node) delEdge(label byte) {
@@ -117,8 +106,7 @@ namespace Zyborg.Collections
         //~ }
         public void MergeChild()
         {
-            var e = this._edges.Values[0];
-            var child = e._node;
+            var child = this._edges.Values[0];
 
             this._prefix = this._prefix + child._prefix;
             this._leaf = child._leaf;
@@ -130,10 +118,10 @@ namespace Zyborg.Collections
             w.WriteLine($"{prefix}Prfx=[{this._prefix}]");
             if (this._leaf != null)
                 w.WriteLine($"{prefix}Leaf:  [{this._leaf._key}] = [{this._leaf._value}]");
-            foreach (var e in _edges.Values)
+            foreach (var e in _edges)
             {
-                w.WriteLine($"{prefix}Edge:  label=[{e._label}]");
-                e._node.Print(w, prefix + "  ");
+                w.WriteLine($"{prefix}Edge:  label=[{e.Key}]");
+                e.Value.Print(w, prefix + "  ");
             }
         }
     }
@@ -275,20 +263,15 @@ namespace Zyborg.Collections
                 //~ }
                 if (n == null)
                 {
-                    var e = new Edge<TValue>
+                    parent.AddEdge(search[0], new Node<TValue>
                     {
-                        _label = search[0],
-                        _node = new Node<TValue>
+                        _leaf = new LeafNode<TValue>
                         {
-                            _leaf = new LeafNode<TValue>
-                            {
-                                _key = key,
-                                _value = value,
-                            },
-                            _prefix = search,
-                        }
-                    };
-                    parent.AddEdge(e);
+                            _key = key,
+                            _value = value,
+                        },
+                        _prefix = search,
+                    });
                     _size++;
                     return (default(TValue), false);
                 }
@@ -320,12 +303,7 @@ namespace Zyborg.Collections
                 {
                     _prefix = search.Substring(0, commonPrefix),
                 };
-                parent.ReplaceEdge(new Edge<TValue>
-                {
-                    _label = search[0],
-                    _node = child,
-                });
-
+                parent.ReplaceEdge(search[0], child);
 
                 // Restore the existing node
                 //~ child.addEdge(edge{
@@ -333,11 +311,7 @@ namespace Zyborg.Collections
                 //~ 	node:  n,
                 //~ })
                 //~ n.prefix = n.prefix[commonPrefix:]
-                child.AddEdge(new Edge<TValue>
-                {
-                    _label = n._prefix[commonPrefix],
-                    _node = n,
-                });
+                child.AddEdge(n._prefix[commonPrefix], n);
                 n._prefix = n._prefix.Substring(commonPrefix);
 
                 // Create a new leaf node
@@ -373,14 +347,10 @@ namespace Zyborg.Collections
                 //~ 	},
                 //~ })
                 //~ return nil, false
-                child.AddEdge(new Edge<TValue>
+                child.AddEdge(search[0], new Node<TValue>
                 {
-                    _label = search[0],
-                    _node = new Node<TValue>
-                    {
-                        _leaf = leaf,
-                        _prefix = search,
-                    }
+                    _leaf = leaf,
+                    _prefix = search,
                 });
                 return (default(TValue), false);
             }
@@ -616,7 +586,7 @@ namespace Zyborg.Collections
                     return (n._leaf._key, n._leaf._value, true);
 
                 if (n._edges.Count > 0)
-                    n = n._edges.Values[0]._node;
+                    n = n._edges.Values[0];
                 else
                     break;
             }
@@ -647,7 +617,7 @@ namespace Zyborg.Collections
                 var num = n._edges.Count;
                 if (num > 0)
                 {
-                    n = n._edges.Values[num - 1]._node;
+                    n = n._edges.Values[num - 1];
                     continue;
                 }
                 if (n.IsLeaf)
@@ -798,7 +768,7 @@ namespace Zyborg.Collections
             //~ }
             foreach (var e in n._edges.Values)
             {
-                if (RecursiveWalk(e._node, fn))
+                if (RecursiveWalk(e, fn))
                     return true;
             }
 
