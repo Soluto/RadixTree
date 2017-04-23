@@ -49,7 +49,7 @@ namespace Zyborg.Collections
 			//~ if ok {
 			//~ 	t.Fatalf("bad")
 			//~ }
-			(_, ok) = r.GoInsert("", 0);
+			(_, ok) = r.Insert("", 0);
 			Assert.IsFalse(ok, "Insert should not replace");
 
 			//~ val, ok := r.Get("")
@@ -85,7 +85,7 @@ namespace Zyborg.Collections
 			//~ }
 			foreach (var ss in s)
 			{
-				r.GoInsert(ss, 1);
+				r.Insert(ss, 1);
 			}
 
 			//~ for _, ss := range s {
@@ -132,7 +132,7 @@ namespace Zyborg.Collections
 			//~ }
 			foreach (var k in keys)
 			{
-				r.GoInsert(k, 1);
+				r.Insert(k, 1);
 			}
 			Assert.AreEqual(keys.Length, r.Count, "Tree count and key count match");
 
@@ -217,7 +217,7 @@ namespace Zyborg.Collections
 			//~ 	t.Fatalf("bad len: %v %v", r.Len(), len(keys))
 			//~ }
 			foreach (var k in keys)
-				r.GoInsert(k, 1);
+				r.Insert(k, 1);
 			Assert.AreEqual(keys.Length, r.Count, "Tree count and key count match");
 
 			//~ type exp struct {
@@ -360,7 +360,7 @@ namespace Zyborg.Collections
 			//	t.Fatalf("bad len: %v %v", r.Len(), len(keys))
 			//}
 			foreach (var k in keys)
-				r.GoInsert(k, 1);
+				r.Insert(k, 1);
 			Assert.AreEqual(keys.Length, r.Count, "Tree count is equal to key count");
 
 			//~ type exp struct {
@@ -613,7 +613,7 @@ namespace Zyborg.Collections
 			printer(r);
 			foreach (var kv in inp)
 			{
-				r.GoInsert(kv.Key, kv.Value);
+				r.Insert(kv.Key, kv.Value);
 				printer(r);
 			}
 

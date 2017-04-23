@@ -35,75 +35,28 @@ namespace Zyborg.Collections
         /// </summary>
         internal SortedList<char, Node<TValue>> Edges = new SortedList<char, Node<TValue>>();
 
-        //~ func (n *node) isLeaf() bool {
-        //~ 	return n.leaf != nil
-        //~ }
         public bool IsLeaf => Leaf != null;
 
-        //~ func (n *node) addEdge(e edge) {
-        //~ 	n.edges = append(n.edges, e)
-        //~ 	n.edges.Sort()
-        //~ }
         public void AddEdge(char label, Node<TValue> node)
         {
             Edges.Add(label, node);
         }
 
-        //~ func (n *node) replaceEdge(e edge) {
-        //~ 	num := len(n.edges)
-        //~ 	idx := sort.Search(num, func(i int) bool {
-        //~ 		return n.edges[i].label >= e.label
-        //~ 	})
-        //~ 	if idx < num && n.edges[idx].label == e.label {
-        //~ 		n.edges[idx].node = e.node
-        //~ 		return
-        //~ 	}
-        //~ 	panic("replacing missing edge")
-        //~ }
-        public void ReplaceEdge(char label, Node<TValue> node)
+        public void SetEdge(char label, Node<TValue> node)
         {
-            if (!Edges.ContainsKey(label)) throw new Exception("replacing missing edge");
             Edges[label] = node;
         }
 
-        //~ func (n *node) getEdge(label byte) *node {
-        //~ 	num := len(n.edges)
-        //~ 	idx := sort.Search(num, func(i int) bool {
-        //~ 		return n.edges[i].label >= label
-        //~ 	})
-        //~ 	if idx < num && n.edges[idx].label == label {
-        //~ 		return n.edges[idx].node
-        //~ 	}
-        //~ 	return nil
-        //~ }
-        public Node<TValue> GetEdge(char label)
+        public bool TryGetEdge(char label, out Node<TValue> edge)
         {
-          return Edges.TryGetValue(label, out var edge) ? edge : null;
+            return Edges.TryGetValue(label, out edge);
         } 
 
-        //~ func (n *node) delEdge(label byte) {
-        //~ 	num := len(n.edges)
-        //~ 	idx := sort.Search(num, func(i int) bool {
-        //~ 		return n.edges[i].label >= label
-        //~ 	})
-        //~ 	if idx < num && n.edges[idx].label == label {
-        //~ 		copy(n.edges[idx:], n.edges[idx+1:])
-        //~ 		n.edges[len(n.edges)-1] = edge{}
-        //~ 		n.edges = n.edges[:len(n.edges)-1]
-        //~ 	}
-        //~ }
         public void RemoveEdge(char label)
         {
             Edges.Remove(label);
         }
 
-        //~ func (n *node) mergeChild() {
-        //~ 	e := n.edges[0]
-        //~ 	child := e.node
-        //~ 	n.prefix = n.prefix + child.prefix
-        //~ 	n.leaf = child.leaf
-        //~ 	n.edges = child.edges
-        //~ }
         public void MergeChild()
         {
             var child = Edges.Values[0];
@@ -158,7 +111,7 @@ namespace Zyborg.Collections
             {
                 foreach (var kv in map)
                 {
-                    GoInsert(kv.Key, kv.Value);
+                    Insert(kv.Key, kv.Value);
                 }
             }
         }
@@ -201,42 +154,24 @@ namespace Zyborg.Collections
         /// adds new entry or updates an existing entry
         /// </summary>
         /// <returns>is entry updated, and old value if it was</returns>
-        public (TValue oldValue, bool updated) GoInsert(string key, TValue value)
+        public (TValue oldValue, bool updated) Insert(string key, TValue value)
         {
-            //~ var parent *node
-            //~ n := t.root
-            //~ search := s
-            var n = _root;
+            var node = _root;
             var search = key;
 
-            //~ for {
             while (true)
             {
                 // Handle key exhaution
-                //~ if len(search) == 0 {
-                //~ 	if n.isLeaf() {
-                //~ 		old := n.leaf.val
-                //~ 		n.leaf.val = v
-                //~ 		return old, true
-                //~ 	}
-                //~
-                //~ 	n.leaf = &leafNode{
-                //~ 		key: s,
-                //~ 		val: v,
-                //~ 	}
-                //~ 	t.size++
-                //~ 	return nil, false
-                //~ }
                 if (search.Length == 0)
                 {
-                    if (n.IsLeaf)
+                    if (node.IsLeaf)
                     {
-                        var old = n.Leaf.Value;
-                        n.Leaf.Value = value;
+                        var old = node.Leaf.Value;
+                        node.Leaf.Value = value;
                         return (old, true);
                     }
 
-                    n.Leaf = new LeafNode<TValue>
+                    node.Leaf = new LeafNode<TValue>
                     {
                         Key = key,
                         Value = value,
@@ -245,29 +180,11 @@ namespace Zyborg.Collections
                     return (default(TValue), false);
                 }
 
-                // Look for the edge
-                //~ parent = n
-                //~ n = n.getEdge(search[0])
-                var parent = n;
-                n = n.GetEdge(search[0]);
+                var parent = node;
 
+                // Look for the edge
                 // No edge, create one
-                //~ if n == nil {
-                //~ 	e := edge{
-                //~ 		label: search[0],
-                //~ 		node: &node{
-                //~ 			leaf: &leafNode{
-                //~ 				key: s,
-                //~ 				val: v,
-                //~ 			},
-                //~ 			prefix: search,
-                //~ 		},
-                //~ 	}
-                //~ 	parent.addEdge(e)
-                //~ 	t.size++
-                //~ 	return nil, false
-                //~ }
-                if (n == null)
+                if (!node.TryGetEdge(search[0], out node))
                 {
                     parent.AddEdge(search[0], new Node<TValue>
                     {
@@ -283,48 +200,26 @@ namespace Zyborg.Collections
                 }
 
                 // Determine longest prefix of the search key on match
-                //~ commonPrefix := longestPrefix(search, n.prefix)
-                //~ if commonPrefix == len(n.prefix) {
-                //~ 	search = search[commonPrefix:]
-                //~ 	continue
-                //~ }
-                var commonPrefix = FindLongestPrefix(search, n.Prefix);
-                if (commonPrefix == n.Prefix.Length)
+                var commonPrefix = FindLongestPrefix(search, node.Prefix);
+                if (commonPrefix == node.Prefix.Length)
                 {
                     search = search.Substring(commonPrefix);
                     continue;
                 }
 
                 // Split the node
-                //~ t.size++
-                //~ child := &node{
-                //~ 	prefix: search[:commonPrefix],
-                //~ }
-                //~ parent.replaceEdge(edge{
-                //~ 	label: search[0],
-                //~ 	node:  child,
-                //~ })
                 _size++;
                 var child = new Node<TValue>
                 {
                     Prefix = search.Substring(0, commonPrefix),
                 };
-                parent.ReplaceEdge(search[0], child);
+                parent.SetEdge(search[0], child);
 
                 // Restore the existing node
-                //~ child.addEdge(edge{
-                //~ 	label: n.prefix[commonPrefix],
-                //~ 	node:  n,
-                //~ })
-                //~ n.prefix = n.prefix[commonPrefix:]
-                child.AddEdge(n.Prefix[commonPrefix], n);
-                n.Prefix = n.Prefix.Substring(commonPrefix);
+                child.AddEdge(node.Prefix[commonPrefix], node);
+                node.Prefix = node.Prefix.Substring(commonPrefix);
 
                 // Create a new leaf node
-                //~ leaf := &leafNode{
-                //~ 	key: s,
-                //~ 	val: v,
-                //~ }
                 var leaf = new LeafNode<TValue>
                 {
                     Key = key,
@@ -332,11 +227,6 @@ namespace Zyborg.Collections
                 };
 
                 // If the new key is a subset, add to to this node
-                //~ search = search[commonPrefix:]
-                //~ if len(search) == 0 {
-                //~ 	child.leaf = leaf
-                //~ 	return nil, false
-                //~ }
                 search = search.Substring(commonPrefix);
                 if (search.Length == 0)
                 {
@@ -345,14 +235,6 @@ namespace Zyborg.Collections
                 }
 
                 // Create a new edge for the node
-                //~ child.addEdge(edge{
-                //~ 	label: search[0],
-                //~ 	node: &node{
-                //~ 		leaf:   leaf,
-                //~ 		prefix: search,
-                //~ 	},
-                //~ })
-                //~ return nil, false
                 child.AddEdge(search[0], new Node<TValue>
                 {
                     Leaf = leaf,
@@ -404,8 +286,7 @@ namespace Zyborg.Collections
                 //~ }
                 parent = n;
                 label = search[0];
-                n = n.GetEdge(label);
-                if (n == null)
+                if (!n.TryGetEdge(label, out n))
                     break;
 
                 // Consume the search prefix
@@ -490,8 +371,7 @@ namespace Zyborg.Collections
                 //~ if n == nil {
                 //~ 	break
                 //~ }
-                n = n.GetEdge(search[0]);
-                if (n == null)
+                if (!n.TryGetEdge(search[0], out n))
                     break;
 
                 // Consume the search prefix
@@ -544,8 +424,7 @@ namespace Zyborg.Collections
                 //~ if n == nil {
                 //~ 	break
                 //~ }
-                n = n.GetEdge(search[0]);
-                if (n == null)
+                if (!n.TryGetEdge(search[0], out n))
                     break;
 
                 // Consume the search prefix
@@ -676,8 +555,7 @@ namespace Zyborg.Collections
                 //~ if n == nil {
                 //~ 	break
                 //~ }
-                n = n.GetEdge(search[0]);
-                if (n == null)
+                if (!n.TryGetEdge(search[0], out n))
                     break;
 
                 // Consume the search prefix
@@ -741,8 +619,7 @@ namespace Zyborg.Collections
                 //~ if n == nil {
                 //~ 	return
                 //~ }
-                n = n.GetEdge(search[0]);
-                if (n == null)
+                if (!n.TryGetEdge(search[0], out n))
                     return;
 
                 // Consume the search prefix
