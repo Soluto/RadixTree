@@ -4,50 +4,45 @@ using System.IO;
 
 namespace Zyborg.Collections
 {
-    // WalkFn is used when walking the tree. Takes a
-    // key and value, returning if iteration should
-    // be terminated.
-    //~ type WalkFn func(s string, v interface{ }) bool
+    /// <summary>
+    /// Walker is used when walking the tree. Takes a key and value, returning if iteration should be terminated.
+    /// </summary>
     public delegate bool Walker<TValue>(string key, TValue value);
 
-    //// leafNode is used to represent a value
-    //~ type leafNode struct {
-    //~ 	key string
-    //~ 	val interface{}
-    //~ }
+    /// <summary>
+    /// used to represent a value
+    /// </summary>
     internal class LeafNode<TValue>
     {
         internal string _key = string.Empty;
         internal TValue _value;
     }
 
-    //// edge is used to represent an edge node
-    //~ type edge struct {
-    //~ 	label byte
-    //~ 	node  *node
-    //~ }
+    /// <summary>
+    /// used to represent an edge node
+    /// </summary>
+    /// <typeparam name="TValue"></typeparam>
     internal class Edge<TValue>
     {
         internal char _label;
         internal Node<TValue> _node;
     }
 
-    //~ type node struct {
-    //~ 	// leaf is used to store possible leaf
-    //~ 	leaf *leafNode
-    //~ 
-    //~ 	// prefix is the common prefix we ignore
-    //~ 	prefix string
-    //~ 
-    //~ 	// Edges should be stored in-order for iteration.
-    //~ 	// We avoid a fully materialized slice to save memory,
-    //~ 	// since in most cases we expect to be sparse
-    //~ 	edges edges
-    //~ }
     internal class Node<TValue>
     {
+        /// <summary>
+        /// used to store possible leaf
+        /// </summary>
         internal LeafNode<TValue> _leaf;
+        /// <summary>
+        /// the common prefix we ignore
+        /// </summary>
         internal string _prefix = string.Empty;
+        /// <summary>
+        /// Edges should be stored in-order for iteration.
+        /// We avoid a fully materialized slice to save memory,
+        /// since in most cases we expect to be sparse
+        /// </summary>
         internal SortedList<char, Edge<TValue>> _edges = new SortedList<char, Edge<TValue>>();
 
         //~ func (n *node) isLeaf() bool {
@@ -143,14 +138,13 @@ namespace Zyborg.Collections
         }
     }
 
-    // Tree implements a radix tree. This can be treated as a
-    // Dictionary abstract data type. The main advantage over
-    // a standard hash map is prefix-based lookups and
-    // ordered iteration,
-    //~ type Tree struct {
-    //~ 	root *node
-    //~ 	size int
-    //~ }
+    /// <summary>
+    /// Tree implements a radix tree. This can be treated as a 
+    /// Dictionary abstract data type. The main advantage over
+    /// a standard hash map is prefix-based lookups and
+    /// ordered iteration,
+    /// </summary>
+    /// <typeparam name="TValue"></typeparam>
     public class RadixTree<TValue>
     {
         private readonly Node<TValue> _root;
