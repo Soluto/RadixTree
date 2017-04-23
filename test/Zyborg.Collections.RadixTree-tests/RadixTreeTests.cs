@@ -42,7 +42,7 @@ namespace Zyborg.Collections
 			//~ if ok {
 			//~ 	t.Fatalf("bad")
 			//~ }
-			var (_, ok) = r.GoDelete("");
+			var (_, ok) = r.Delete("");
 			Assert.IsFalse(ok, "Remove should fail");
 
 			//~ _, ok = r.Insert("", true)
@@ -65,7 +65,7 @@ namespace Zyborg.Collections
 			//~ if !ok || val != true {
 			//~ 	t.Fatalf("bad: %v", val)
 			//~ }
-			(val, ok) = r.GoDelete("");
+			(val, ok) = r.Delete("");
 			Assert.IsTrue(ok, "Remove was successful");
 			Assert.AreEqual(default(int), val, "Remove should return default int");
 		}
@@ -96,7 +96,7 @@ namespace Zyborg.Collections
 			//~ }
 			foreach (var ss in s)
 			{
-				var (_, ok) = r.GoDelete(ss);
+				var (_, ok) = r.Delete(ss);
 				Assert.IsTrue(ok, "Removed key");
 			}
 		}
@@ -546,7 +546,7 @@ namespace Zyborg.Collections
 			//~ }
 			foreach (var kv in inp)
 			{
-				var (@out, ok) = r.GoDelete(kv.Key);
+				var (@out, ok) = r.Delete(kv.Key);
 				Assert.IsTrue(ok, "Contains key for Remove");
 				Assert.AreEqual(kv.Value, @out, "Removed expected value by key");
 			}
@@ -672,7 +672,7 @@ namespace Zyborg.Collections
 			//~ }
 			foreach (var kv in inp)
 			{
-				var (@out, ok) = r.GoDelete(kv.Key);
+				var (@out, ok) = r.Delete(kv.Key);
 				Assert.IsTrue(ok, "Contains key for Remove");
 				Assert.AreEqual(kv.Value, @out, "Removed expected value by key");
 			}

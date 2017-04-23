@@ -88,16 +88,14 @@ namespace Zyborg.Collections
     /// <typeparam name="TValue"></typeparam>
     public class RadixTree<TValue>
     {
-        private readonly Node<TValue> _root;
+        private readonly Node<TValue> _root = new Node<TValue>();
         private int _size;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RadixTree{TValue}"/> class.
         /// returns an empty Tree
         /// </summary>
-        public RadixTree()
-            : this(null)
-        { }
+        public RadixTree() { }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RadixTree{TValue}"/> class.
@@ -106,13 +104,12 @@ namespace Zyborg.Collections
         /// <param name="map"></param>
         public RadixTree(IReadOnlyDictionary<string, TValue> map)
         {
-            _root = new Node<TValue>();
-            if (map != null)
+            if (map == null)
+                throw new ArgumentNullException(nameof(map));
+            
+            foreach (var kv in map)
             {
-                foreach (var kv in map)
-                {
-                    Insert(kv.Key, kv.Value);
-                }
+                Insert(kv.Key, kv.Value);
             }
         }
 
@@ -129,18 +126,6 @@ namespace Zyborg.Collections
         /// <returns>length of shared prefix</returns>
         public static int FindLongestPrefix(string str1, string str2)
         {
-            //	max := len(k1)
-            //	if l := len(k2); l < max {
-            //		max = l
-            //	}
-            //	var i int
-            //	for i = 0; i < max; i++ {
-            //		if k1[i] != k2[i] {
-            //			break
-            //		}
-            //	}
-            //	return i
-
             var max = str1.Length > str2.Length ? str2.Length : str1.Length;
 
             for (var i = 0; i < max; i++)
@@ -248,94 +233,55 @@ namespace Zyborg.Collections
         /// deletes a key
         /// </summary>
         /// <returns>is entry deleted, and the value what was deleted</returns>
-        public (TValue oldValue, bool deleted) GoDelete(string key)
+        public (TValue oldValue, bool deleted) Delete(string key)
         {
-            //~	var parent *node
-            //~	var label byte
-            //~	n := t.root
-            //~	search := s
             Node<TValue> parent = null;
-            char label = char.MinValue;
-            var n = _root;
+            var label = char.MinValue;
+            var node = _root;
             var search = key;
 
-            //!	for {
             while (true)
             {
                 // Check for key exhaution
-                //~ if len(search) == 0 {
-                //~ 	if !n.isLeaf() {
-                //~ 		break
-                //~ 	}
-                //~ 	goto DELETE
-                //~ }
                 if (search.Length == 0)
                 {
-                    if (!n.IsLeaf)
+                    if (!node.IsLeaf)
                         break;
 
-                    goto DELETE;
+                    // Delete the leaf
+                    var leaf = node.Leaf;
+                    node.Leaf = null;
+                    _size--;
+
+                    // Check if we should delete this node from the parent
+                    if (parent != null && node.Edges.Count == 0)
+                        parent.RemoveEdge(label);
+
+                    // Check if we should merge this node
+                    if (node != _root && node.Edges.Count == 1)
+                        node.MergeChild();
+
+                    // Check if we should merge the parent's other child
+                    if (parent != null && parent != _root && parent.Edges.Count == 1 && !parent.IsLeaf)
+                        parent.MergeChild();
+
+                    return (leaf.Value, true);
                 }
 
                 // Look for an edge
-                //~ parent = n
-                //~ label = search[0]
-                //~ n = n.getEdge(label)
-                //~ if n == nil {
-                //~ 	break
-                //~ }
-                parent = n;
+                parent = node;
                 label = search[0];
-                if (!n.TryGetEdge(label, out n))
+                if (!node.TryGetEdge(label, out node))
                     break;
 
                 // Consume the search prefix
-                //~ if strings.HasPrefix(search, n.prefix) {
-                //~ 	search = search[len(n.prefix):]
-                //~ } else {
-                //~ 	break
-                //~ }
-                if (search.StartsWith(n.Prefix))
-                    search = search.Substring(n.Prefix.Length);
+                if (search.StartsWith(node.Prefix))
+                    search = search.Substring(node.Prefix.Length);
                 else
                     break;
             }
 
-            //~	return nil, false
             return (default(TValue), false);
-
-            DELETE:
-            // Delete the leaf
-            //~	leaf := n.leaf
-            //~	n.leaf = nil
-            //~	t.size--
-            var leaf = n.Leaf;
-            n.Leaf = null;
-            _size--;
-
-            // Check if we should delete this node from the parent
-            //~	if parent != nil && len(n.edges) == 0 {
-            //~		parent.delEdge(label)
-            //~	}
-            if (parent != null && n.Edges.Count == 0)
-                parent.RemoveEdge(label);
-
-            // Check if we should merge this node
-            //~	if n != t.root && len(n.edges) == 1 {
-            //~		n.mergeChild()
-            //~	}
-            if (n != _root && n.Edges.Count == 1)
-                n.MergeChild();
-
-            // Check if we should merge the parent's other child
-            //~	if parent != nil && parent != t.root && len(parent.edges) == 1 && !parent.isLeaf() {
-            //~		parent.mergeChild()
-            //~	}
-            if (parent != null && parent != _root && parent.Edges.Count == 1 && !parent.IsLeaf)
-                parent.MergeChild();
-
-            //~ return leaf.val, true
-            return (leaf.Value, true);
         }
 
         /// <summary>
