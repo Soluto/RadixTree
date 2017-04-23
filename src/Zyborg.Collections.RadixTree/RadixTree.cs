@@ -138,38 +138,43 @@ namespace Zyborg.Collections
         private readonly Node<TValue> _root;
         private int _size;
 
-        // New returns an empty Tree
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RadixTree{TValue}"/> class.
+        /// returns an empty Tree
+        /// </summary>
         public RadixTree()
             : this(null)
         { }
 
-        // NewFromMap returns a new tree containing the keys
-        // from an existing map
-        //~ func NewFromMap(m map[string]interface{}) *Tree {
-        //~ 	t := &Tree{root: &node{}}
-        //~ 	for k, v := range m {
-        //~ 		t.Insert(k, v)
-        //~ 	}
-        //~ 	return t
-        //~ }
-        public RadixTree(IReadOnlyDictionary<string, TValue> m)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RadixTree{TValue}"/> class.
+        /// returns a new tree containing the keys from an existing map
+        /// </summary>
+        /// <param name="map"></param>
+        public RadixTree(IReadOnlyDictionary<string, TValue> map)
         {
             _root = new Node<TValue>();
-            if (m != null)
+            if (map != null)
             {
-                foreach (var kv in m)
+                foreach (var kv in map)
                 {
-                    this.GoInsert(kv.Key, kv.Value);
+                    GoInsert(kv.Key, kv.Value);
                 }
             }
         }
 
-        // Len is used to return the number of elements in the tree
+        /// <summary>
+        /// number of elements in the tree
+        /// </summary>
         public int Count => _size;
 
-        // longestPrefix finds the length of the shared prefix
-        // of two strings
-        public static int FindLongestPrefix(string k1, string k2)
+        /// <summary>
+        /// finds the length of the shared prefix of two strings
+        /// </summary>
+        /// <param name="str1">first string to compare</param>
+        /// <param name="str2">secont string to compare</param>
+        /// <returns>length of shared prefix</returns>
+        public static int FindLongestPrefix(string str1, string str2)
         {
             //	max := len(k1)
             //	if l := len(k2); l < max {
@@ -183,18 +188,19 @@ namespace Zyborg.Collections
             //	}
             //	return i
 
-            var max = k1.Length > k2.Length ? k2.Length : k1.Length;
+            var max = str1.Length > str2.Length ? str2.Length : str1.Length;
 
             for (var i = 0; i < max; i++)
-                if (k1[i] != k2[i])
+                if (str1[i] != str2[i])
                     return i;
 
             return max;
         }
 
-        // Insert is used to add a newentry or update
-        // an existing entry. Returns if updated.
-        //~ func (t *Tree) Insert(s string, v interface{}) (interface{}, bool) {
+        /// <summary>
+        /// adds new entry or updates an existing entry
+        /// </summary>
+        /// <returns>is entry updated, and old value if it was</returns>
         public (TValue oldValue, bool updated) GoInsert(string key, TValue value)
         {
             //~ var parent *node
@@ -356,10 +362,11 @@ namespace Zyborg.Collections
             }
         }
 
-        // Delete is used to delete a key, returning the previous
-        // value and if it was deleted
-        //!func (t *Tree) Delete(s string) (interface{}, bool) {
-        public (TValue oldValue, bool deleted) GoDelete(string s)
+        /// <summary>
+        /// deletes a key
+        /// </summary>
+        /// <returns>is entry deleted, and the value what was deleted</returns>
+        public (TValue oldValue, bool deleted) GoDelete(string key)
         {
             //~	var parent *node
             //~	var label byte
@@ -368,7 +375,7 @@ namespace Zyborg.Collections
             Node<TValue> parent = null;
             char label = char.MinValue;
             var n = _root;
-            var search = s;
+            var search = key;
 
             //!	for {
             while (true)
@@ -450,15 +457,16 @@ namespace Zyborg.Collections
             return (leaf._value, true);
         }
 
-        // Get is used to lookup a specific key, returning
-        // the value and if it was found
-        //~ func (t *Tree) Get(s string) (interface{}, bool) {
-        public (TValue value, bool found) GoGet(string s)
+        /// <summary>
+        /// lookup a specific key
+        /// </summary>
+        /// <returns>the value and if it was found</returns>
+        public (TValue value, bool found) GoGet(string key)
         {
             //	n := t.root
             //	search := s
             var n = _root;
-            var search = s;
+            var search = key;
 
             //~ for {
             while (true)
@@ -503,17 +511,17 @@ namespace Zyborg.Collections
             return (default(TValue), false);
         }
 
-        // LongestPrefix is like Get, but instead of an
-        // exact match, it will return the longest prefix match.
-        //~ func (t *Tree) LongestPrefix(s string) (string, interface{}, bool) {
-        public (string key, TValue value, bool found) LongestPrefix(string s)
+        /// <summary>
+        /// searches for the longest prefix match
+        /// </summary>
+        public (string key, TValue value, bool found) LongestPrefix(string prefix)
         {
             //~ var last *leafNode
             //~ n := t.root
             //~ search := s
             LeafNode<TValue> last = null;
             var n = _root;
-            var search = s;
+            var search = prefix;
 
             //for {
             while (true)
@@ -563,8 +571,9 @@ namespace Zyborg.Collections
             return (string.Empty, default(TValue), false);
         }
 
-        // Minimum is used to return the minimum value in the tree
-        //~ func (t *Tree) Minimum() (string, interface{}, bool) {
+        /// <summary>
+        /// returns the minimum value in the tree
+        /// </summary>
         public (string key, TValue value, bool found) Minimum()
         {
             //!n := t.root
@@ -595,8 +604,10 @@ namespace Zyborg.Collections
             return (string.Empty, default(TValue), false);
         }
 
-        // Maximum is used to return the maximum value in the tree
-        //~ func (t *Tree) Maximum() (string, interface{}, bool) {
+        /// <summary>
+        /// returns the maximum value in the tree
+        /// </summary>
+        /// <returns></returns>
         public (string key, TValue value, bool found) Maximum()
         {
             //~ n := t.root
