@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 
-namespace Zyborg.Collections
+namespace Soluto.Collections.RadixTree.Tests
 {
     [TestClass]
     public class RadixTreeTests

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Zyborg.Collections
+namespace Soluto.Collections
 {
     /// <summary>
     /// Walker is used when walking the tree. Takes a key and value, returning if iteration should be terminated.

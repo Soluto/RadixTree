@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard1.3</TargetFramework>
-    <RootNamespace>Zyborg.Collections</RootNamespace>
+    <RootNamespace>Soluto.Collections</RootNamespace>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
   </PropertyGroup>
 
@@ -26,7 +26,7 @@
   </Target>
 
   <PropertyGroup>
-    <AssemblyName>Zyborg.Collections.RadixTree</AssemblyName>
+    <AssemblyName>Soluto.Collections.RadixTree</AssemblyName>
     <AssemblyTitle>Radix Tree for .NET</AssemblyTitle>
     <AssemblyVersion>$(FullVersion)</AssemblyVersion>
     <Authors>https://github.com/zyborg/Zyborg.RadixTree/graphs/contributors</Authors>

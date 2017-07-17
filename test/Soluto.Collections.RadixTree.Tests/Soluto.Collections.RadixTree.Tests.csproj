@@ -2,7 +2,7 @@
 
   <PropertyGroup>    
     <TargetFramework>netcoreapp1.1</TargetFramework>    
-    <RootNamespace>Zyborg.Collections</RootNamespace>
+    <RootNamespace>Soluto.Collections.RadixTree.Tests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Zyborg.Collections.RadixTree\Zyborg.Collections.RadixTree.csproj" />
+    <ProjectReference Include="..\..\src\Soluto.Collections.RadixTree\Soluto.Collections.RadixTree.csproj" />
   </ItemGroup>
 
   <ItemGroup>
