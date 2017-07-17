@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 
 namespace Soluto.Collections
@@ -8,77 +7,6 @@ namespace Soluto.Collections
     /// <summary>
     /// Walker is used when walking the tree. Takes a key and value, returning if iteration should be terminated.
     /// </summary>
-    public delegate bool Walker<in TValue>(string key, TValue value);
-
-    /// <summary>
-    /// used to represent a value
-    /// </summary>
-    internal class LeafNode<TValue>
-    {
-        internal string Key = string.Empty;
-        internal TValue Value;
-    }
-
-    internal class Node<TValue>
-    {
-        /// <summary>
-        /// used to store possible leaf
-        /// </summary>
-        internal LeafNode<TValue> Leaf;
-        /// <summary>
-        /// the common prefix we ignore
-        /// </summary>
-        internal string Prefix = string.Empty;
-        /// <summary>
-        /// Edges should be stored in-order for iteration.
-        /// We avoid a fully materialized slice to save memory,
-        /// since in most cases we expect to be sparse
-        /// </summary>
-        internal SortedList<char, Node<TValue>> Edges = new SortedList<char, Node<TValue>>();
-
-        public bool IsLeaf => Leaf != null;
-
-        public void AddEdge(char label, Node<TValue> node)
-        {
-            Edges.Add(label, node);
-        }
-
-        public void SetEdge(char label, Node<TValue> node)
-        {
-            Edges[label] = node;
-        }
-
-        public bool TryGetEdge(char label, out Node<TValue> edge)
-        {
-            return Edges.TryGetValue(label, out edge);
-        } 
-
-        public void RemoveEdge(char label)
-        {
-            Edges.Remove(label);
-        }
-
-        public void MergeChild()
-        {
-            var child = Edges.Values[0];
-
-            Prefix = Prefix + child.Prefix;
-            Leaf = child.Leaf;
-            Edges = child.Edges;
-        }
-
-        public void Print(StreamWriter w, string prefix)
-        {
-            w.WriteLine($"{prefix}Prfx=[{Prefix}]");
-            if (Leaf != null)
-                w.WriteLine($"{prefix}Leaf:  [{Leaf.Key}] = [{Leaf.Value}]");
-            foreach (var e in Edges)
-            {
-                w.WriteLine($"{prefix}Edge:  label=[{e.Key}]");
-                e.Value.Print(w, prefix + "  ");
-            }
-        }
-    }
 
     /// <summary>
     /// Tree implements a radix tree. This can be treated as a 
@@ -89,8 +17,10 @@ namespace Soluto.Collections
     /// <typeparam name="TValue"></typeparam>
     public class RadixTree<TValue>
     {
+        private delegate void Walker(string key, TValue value);
+
         private readonly Node<TValue> _root = new Node<TValue>();
-        private int _size;
+        private readonly Dictionary<string, TValue> _values = new Dictionary<string, TValue>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RadixTree{TValue}"/> class.
@@ -107,7 +37,7 @@ namespace Soluto.Collections
         {
             if (map == null)
                 throw new ArgumentNullException(nameof(map));
-            
+
             foreach (var kv in map)
             {
                 Insert(kv.Key, kv.Value);
@@ -117,24 +47,7 @@ namespace Soluto.Collections
         /// <summary>
         /// number of elements in the tree
         /// </summary>
-        public int Count => _size;
-
-        /// <summary>
-        /// finds the length of the shared prefix of two strings
-        /// </summary>
-        /// <param name="str1">first string to compare</param>
-        /// <param name="str2">secont string to compare</param>
-        /// <returns>length of shared prefix</returns>
-        public static int FindLongestPrefix(string str1, string str2)
-        {
-            var max = str1.Length > str2.Length ? str2.Length : str1.Length;
-
-            for (var i = 0; i < max; i++)
-                if (str1[i] != str2[i])
-                    return i;
-
-            return max;
-        }
+        public int Count => _values.Count;
 
         /// <summary>
         /// adds new entry or updates an existing entry
@@ -142,6 +55,8 @@ namespace Soluto.Collections
         /// <returns>is entry updated, and old value if it was</returns>
         public (TValue oldValue, bool updated) Insert(string key, TValue value)
         {
+            _values[key] = value;
+
             var node = _root;
             var search = key;
 
@@ -162,7 +77,6 @@ namespace Soluto.Collections
                         Key = key,
                         Value = value,
                     };
-                    _size++;
                     return (default(TValue), false);
                 }
 
@@ -181,12 +95,11 @@ namespace Soluto.Collections
                         },
                         Prefix = search,
                     });
-                    _size++;
                     return (default(TValue), false);
                 }
 
                 // Determine longest prefix of the search key on match
-                var commonPrefix = FindLongestPrefix(search, node.Prefix);
+                var commonPrefix = StringHelpers.FindLongestPrefix(search, node.Prefix);
                 if (commonPrefix == node.Prefix.Length)
                 {
                     search = search.Substring(commonPrefix);
@@ -194,7 +107,6 @@ namespace Soluto.Collections
                 }
 
                 // Split the node
-                _size++;
                 var child = new Node<TValue>
                 {
                     Prefix = search.Substring(0, commonPrefix),
@@ -236,6 +148,8 @@ namespace Soluto.Collections
         /// <returns>is entry deleted, and the value what was deleted</returns>
         public (TValue oldValue, bool deleted) Delete(string key)
         {
+            if (!_values.Remove(key)) return (default(TValue), false);
+
             Node<TValue> parent = null;
             var label = char.MinValue;
             var node = _root;
@@ -252,7 +166,6 @@ namespace Soluto.Collections
                     // Delete the leaf
                     var leaf = node.Leaf;
                     node.Leaf = null;
-                    _size--;
 
                     // Check if we should delete this node from the parent
                     if (parent != null && node.Edges.Count == 0)
@@ -289,38 +202,7 @@ namespace Soluto.Collections
         /// lookup a specific key
         /// </summary>
         /// <returns>the value and if it was found</returns>
-        public bool TryGetValue(string key, out TValue value)
-        {
-            var node = _root;
-            var search = key;
-
-            while (true)
-            {
-                // Check for key exhaution
-                if (search.Length == 0)
-                {
-                    if (node.IsLeaf)
-                    {
-                        value = node.Leaf.Value;
-                        return true;
-                    }
-                    break;
-                }
-
-                // Look for an edge
-                if (!node.TryGetEdge(search[0], out node))
-                    break;
-
-                // Consume the search prefix
-                if (search.StartsWith(node.Prefix))
-                    search = search.Substring(node.Prefix.Length);
-                else
-                    break;
-            }
-
-            value = default(TValue);
-            return false;
-        }
+        public bool TryGetValue(string key, out TValue value) => _values.TryGetValue(key, out value);
 
         /// <summary>
         /// searches for the longest prefix match
@@ -357,63 +239,9 @@ namespace Soluto.Collections
         }
 
         /// <summary>
-        /// returns the minimum value in the tree
-        /// </summary>
-        public (string key, TValue value, bool found) Minimum()
-        {
-            var node = _root;
-
-            while (true)
-            {
-                if (node.IsLeaf)
-                    return (node.Leaf.Key, node.Leaf.Value, true);
-
-                if (node.Edges.Count > 0)
-                    node = node.Edges.Values[0];
-                else
-                    break;
-            }
-
-            return (string.Empty, default(TValue), false);
-        }
-
-        /// <summary>
-        /// returns the maximum value in the tree
-        /// </summary>
-        public (string key, TValue value, bool found) Maximum()
-        {
-            var node = _root;
-
-            while (true)
-            {
-                var num = node.Edges.Count;
-                if (num > 0)
-                {
-                    node = node.Edges.Values[num - 1];
-                    continue;
-                }
-                if (node.IsLeaf)
-                    return (node.Leaf.Key, node.Leaf.Value, true);
-
-                break;
-            }
-
-            return (string.Empty, default(TValue), false);
-        }
-
-        /// <summary>
-        /// used to walk the tree
-        /// </summary>
-        public void Walk(Walker<TValue> walker)
-        {
-            RecursiveWalk(_root, walker);
-        }
-
-
-        /// <summary>
         /// used to walk the tree under a prefix
         /// </summary>
-        public void WalkPrefix(string prefix, Walker<TValue> walker)
+        private void WalkPrefix(string prefix, Walker walker)
         {
             var node = _root;
             var search = prefix;
@@ -449,74 +277,33 @@ namespace Soluto.Collections
         }
 
         /// <summary>
-        /// WalkPath is used to walk the tree, but only visiting nodes
-        /// from the root down to a given leaf. Where WalkPrefix walks
-        /// all the entries *under* the given prefix, this walks the
-        /// entries *above* the given prefix.
-        /// </summary>
-        public void WalkPath(string path, Walker<TValue> walker)
-        {
-            var node = _root;
-            var search = path;
-
-            while (true)
-            {
-                // Visit the leaf values if any
-                if (node.Leaf != null && walker(node.Leaf.Key, node.Leaf.Value))
-                    return;
-
-                // Check for key exhaution
-                if (search.Length == 0)
-                    return;
-
-                // Look for an edge
-                if (!node.TryGetEdge(search[0], out node))
-                    return;
-
-                // Consume the search prefix
-                if (search.StartsWith(node.Prefix))
-                    search = search.Substring(node.Prefix.Length);
-                else
-                    break;
-            }
-        }
-
-        /// <summary>
         /// used to do a pre-order walk of a node recursively
         /// </summary>
         /// <returns>true if the walk should be aborted</returns>
-        private static bool RecursiveWalk(Node<TValue> node, Walker<TValue> walker)
+        private static void RecursiveWalk(Node<TValue> node, Walker walker)
         {
             // Visit the leaf values if any
-            if (node.Leaf != null && walker(node.Leaf.Key, node.Leaf.Value))
-                return true;
+            if (node.Leaf != null)
+            {
+                walker(node.Leaf.Key, node.Leaf.Value);
+            }
 
             // Recurse on the children
-            return node.Edges.Values.Any(e => RecursiveWalk(e, walker));
-        }
-
-        /// <summary>
-        /// used to walk the tree and convert it into a map
-        /// </summary>
-        public IDictionary<string, TValue> ToDictionary()
-        {
-            var @out = new Dictionary<string, TValue>(_size);
-
-            Walk((k, v) =>
+            foreach (var edge in node.Edges.Values)
             {
-                @out[k] = v;
-                return false;
-            });
-
-            return @out;
-        }
-
-        public void Print(Stream s)
-        {
-            using (var sw = new StreamWriter(s))
-            {
-                _root.Print(sw, "");
+                RecursiveWalk(edge, walker);
             }
         }
+
+        public Dictionary<string, TValue> ToDictionary() => new Dictionary<string, TValue>(_values);
+
+        public List<(string key, TValue value)> ListPrefix(string prefix)
+        {
+            var result = new List<(string, TValue)>();
+            WalkPrefix(prefix, (k, v) => result.Add((k, v)));
+            return result;
+        }
+
+        public ICollection<string> Keys => _values.Keys;
     }
 }
