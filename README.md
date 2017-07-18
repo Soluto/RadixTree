@@ -1,5 +1,3 @@
-# Zyborg.RadixTree [![Build status](https://ci.appveyor.com/api/projects/status/gw8tiyugm1h4p641?svg=true)](https://ci.appveyor.com/project/ebekker/zyborg-radixtree)
+# Soluto.Collections.RadixTree [![Build status](https://ci.appveyor.com/api/projects/status/6kmidl1tov3rgi81/branch/master?svg=true)](https://ci.appveyor.com/project/TomerDvir/radixtree/branch/master)
 
-.NET implementation of [radix trees](http://en.wikipedia.org/wiki/Radix_tree), ported from [Go implementation](https://github.com/armon/go-radix).
-
-This is a line-by-line adaptation of the original Go implementation.
+.NET implementation of [radix trees](http://en.wikipedia.org/wiki/Radix_tree), forked from [Zyborg.RadixTree](https://github.com/zyborg/Zyborg.RadixTree).
