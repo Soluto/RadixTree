@@ -5,10 +5,6 @@ using System.Linq;
 namespace Soluto.Collections
 {
     /// <summary>
-    /// Walker is used when walking the tree. Takes a key and value, returning if iteration should be terminated.
-    /// </summary>
-
-    /// <summary>
     /// Tree implements a radix tree. This can be treated as a 
     /// Dictionary abstract data type. The main advantage over
     /// a standard hash map is prefix-based lookups and

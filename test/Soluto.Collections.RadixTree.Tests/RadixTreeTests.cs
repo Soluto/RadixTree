@@ -22,7 +22,7 @@ namespace Soluto.Collections.RadixTree.Tests
             var (oldValue, updated) = radixTree.Insert("", 2);
 
             //Assert
-            Assert.True(updated);
+            Assert.True(updated, "key should be updated");
             Assert.Equal(1, oldValue);
             Assert.Equal(expectedTree.Count, radixTree.Count);
             Assert.Equal(expectedTree.Keys, radixTree.Keys);
@@ -126,7 +126,7 @@ namespace Soluto.Collections.RadixTree.Tests
             var found = radixTree.TryGetValue(input, out int value);
 
             // Assert
-            Assert.True(found, "Should find longest prefix match");
+            Assert.True(found, "should find value");
             Assert.Equal(dictionary[input], value);
         }
 
@@ -144,7 +144,7 @@ namespace Soluto.Collections.RadixTree.Tests
             var found = radixTree.TryGetValue(input, out int _);
 
             // Assert
-            Assert.False(found, "should not get value");
+            Assert.False(found, "should not find value");
         }
 
         [Theory]
@@ -159,7 +159,7 @@ namespace Soluto.Collections.RadixTree.Tests
             var found = radixTree.TryGetValue(input, out int _);
 
             // Assert
-            Assert.False(found, "should not get value");
+            Assert.False(found, "should not find value");
         }
 
         [Theory]
@@ -195,7 +195,7 @@ namespace Soluto.Collections.RadixTree.Tests
             var (key, value, found) = radixTree.LongestPrefix(input);
 
             // Assert
-            Assert.True(found, "Should find longest prefix match");
+            Assert.True(found, "should find longest prefix match");
             Assert.Equal(expected, key);
             Assert.Equal(dictionary[expected], value);
         }
@@ -223,7 +223,7 @@ namespace Soluto.Collections.RadixTree.Tests
             var (_, _, found) = radixTree.LongestPrefix(input);
 
             // Assert
-            Assert.False(found, "Should not find longest prefix match");
+            Assert.False(found, "should not find longest prefix match");
 
         }
 
@@ -239,7 +239,7 @@ namespace Soluto.Collections.RadixTree.Tests
             var (_, _, found) = radixTree.LongestPrefix(input);
 
             // Assert
-            Assert.False(found, "Should not find longest prefix match");
+            Assert.False(found, "should not find longest prefix match");
         }
 
         [Theory]
@@ -260,19 +260,17 @@ namespace Soluto.Collections.RadixTree.Tests
             {
                 "foobar",
                 "foo/bar/baz",
-                "foo/baz/bar",
                 "foo/zip/zap",
-                "zipzap"
+                "zipzap",
+                "foo/baz/bar"
             };
             var r = InitTree(keys, 1);
 
             // Act
             var result = r.ListPrefix(input);
-            result.Sort();
 
             // Assert
-            Array.Sort(expected);
-            Assert.Equal(expected.Select(x => (x, 1)).ToList(), result);
+            Assert.Equal(expected.Select(x => (x, 1)).OrderBy(x => x).ToList(), result);
         }
 
         private static RadixTree<T> InitTree<T>(IEnumerable<string> keys, T initialValue) => new RadixTree<T>(keys.ToDictionary(x => x, _ => initialValue));
