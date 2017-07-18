@@ -2,46 +2,22 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard1.3</TargetFramework>
-    <RootNamespace>Soluto.Collections</RootNamespace>
+    <Version Condition="$(appveyor_build_version)!=''">$(appveyor_build_version)</Version>
+    <Version Condition="$(appveyor_build_version)==''">1.0.0-development</Version>
+
+    <Company>Soluto</Company>
+    <Description>.NET implementation of radix trees</Description>
+    <RepositoryUrl>https://github.com/Soluto/RadixTree.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-  </PropertyGroup>
-
-  <!--
-    - Resolve versioning information in concert with AppVeyor environment and
-    - also verifies that the base version info here agrees with the AV config
-    -->
-  <PropertyGroup>
-    <BaseVersion>1.0.1</BaseVersion>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(APPVEYOR_BUILD_NUMBER)'==''">
-    <FullVersion>$(BaseVersion).0</FullVersion>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(APPVEYOR_BUILD_NUMBER)'!=''">
-    <FullVersion>$(BaseVersion).$(APPVEYOR_BUILD_NUMBER)</FullVersion>
-  </PropertyGroup>
-  <Target Name="CheckAppVeyorVersion" Condition="'$(APPVEYOR_BUILD_NUMBER)'!=''" BeforeTargets="Build">
-    <Error Condition="$(FullVersion)!=$(APPVEYOR_BUILD_VERSION)" Text="***********************************************" />
-    <Error Condition="$(FullVersion)!=$(APPVEYOR_BUILD_VERSION)" Text="** AppVeyor version does not match BaseVersion!" />
-    <Error Condition="$(FullVersion)!=$(APPVEYOR_BUILD_VERSION)" Text="***********************************************" />
-  </Target>
-
-  <PropertyGroup>
-    <AssemblyName>Soluto.Collections.RadixTree</AssemblyName>
-    <AssemblyTitle>Radix Tree for .NET</AssemblyTitle>
-    <AssemblyVersion>$(FullVersion)</AssemblyVersion>
-    <Authors>https://github.com/zyborg/Zyborg.RadixTree/graphs/contributors</Authors>
-    <Company>https://github.com/zyborg</Company>
-    <Product>Zyborg.RadixTree</Product>
-    <Copyright>Copyright © Eugene Bekker.  All rights reserved.  Licensed under the MIT License.</Copyright>
-    <PackageProjectUrl>https://github.com/zyborg/Zyborg.RadixTree</PackageProjectUrl>
-    <Version>$(FullVersion)</Version>
-    <FileVersion>$(FullVersion)</FileVersion>
-    <Description>.NET implementation of radix trees, ported from the Go implementation.</Description>
-    <PackageLicenseUrl>https://github.com/zyborg/Zyborg.RadixTree/blob/master/LICENSE</PackageLicenseUrl>
+    <IncludeSymbosl>True</IncludeSymbosl>
+    <PackageReleaseNotes>Initial release</PackageReleaseNotes>
+    <PackageLicenseUrl>https://github.com/Soluto/RadixTree/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/Soluto/RadixTree</PackageProjectUrl>
+    <RootNamespace>Soluto.Collections</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="System.ValueTuple" Version="4.3.0" />
   </ItemGroup>
-
 </Project>
